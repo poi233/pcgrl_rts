@@ -173,7 +173,11 @@ class RTSProblem(Problem):
     """
 
     def get_episode_over(self, new_stats, old_stats):
-        return new_stats["base_distance"] > 0 and new_stats["resource_distance"] >= 0
+        return new_stats["base_count"] == self._target_base and \
+               new_stats["resource_count"] >= self._min_resource and \
+               new_stats["resource_count"] <= self._max_resource and \
+               new_stats["base_distance"] > 2 and \
+               new_stats["resource_distance"] >= 0
     """
     Get any debug information need to be printed
 
@@ -220,8 +224,8 @@ class RTSProblem(Problem):
     def render(self, map):
         if self._graphics == None:
             self._graphics = {
-                "empty": Image.open(os.path.dirname(__file__) + "/rts/passable.png").convert('RGBA'),
                 "solid": Image.open(os.path.dirname(__file__) + "/rts/impassable.png").convert('RGBA'),
+                "empty": Image.open(os.path.dirname(__file__) + "/rts/passable.png").convert('RGBA'),
                 "base": Image.open(os.path.dirname(__file__) + "/rts/base.png").convert('RGBA'),
                 "resource": Image.open(os.path.dirname(__file__) + "/rts/mineral.png").convert('RGBA'),
                 "chock_point": Image.open(os.path.dirname(__file__) + "/rts/impassable.png").convert('RGBA'),

@@ -97,7 +97,7 @@ def main(game, representation, experiment, steps, n_cpu, render, logging, **kwar
 
 ################################## MAIN ########################################
 game = 'rts'
-representation = 'narrow'
+representation = 'wide'
 experiment = None
 steps = 1e6
 render = False

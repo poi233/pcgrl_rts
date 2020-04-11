@@ -19,7 +19,7 @@ def infer(game, representation, model_path, **kwargs):
     elif game == "zelda":
         model.FullyConvPolicy = model.FullyConvPolicyBigMap
         kwargs['cropped_size'] = 22
-    elif game == "sokoban":
+    elif game == "sokoban" or game == 'rts':
         model.FullyConvPolicy = model.FullyConvPolicySmallMap
         kwargs['cropped_size'] = 10
     kwargs['render'] = True
@@ -27,20 +27,21 @@ def infer(game, representation, model_path, **kwargs):
     agent = PPO2.load(model_path)
     env = make_vec_envs(env_name, representation, None, 1, **kwargs)
     obs = env.reset()
-    obs = env.reset()
     dones = False
     for i in range(kwargs.get('trials', 1)):
         while not dones:
             action, _ = agent.predict(obs)
             obs, _, dones, info = env.step(action)
+            print()
             if kwargs.get('verbose', False):
                 print(info[0])
             if dones:
                 break
         time.sleep(0.2)
+    return obs
 
 ################################## MAIN ########################################
-game = 'sokoban'
+game = 'rts'
 representation = 'turtle'
 model_path = 'models/{}/{}/model_1.pkl'.format(game, representation)
 kwargs = {
@@ -50,4 +51,5 @@ kwargs = {
 }
 
 if __name__ == '__main__':
-    infer(game, representation, model_path, **kwargs)
+    obs = infer(game, representation, model_path, **kwargs)
+    print(obs)

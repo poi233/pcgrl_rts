@@ -1,14 +1,16 @@
+import gym
+import numpy as np
+from gym import spaces
+
+from gym_pcgrl.envs.helper import get_int_prob, get_string_map
 from gym_pcgrl.envs.probs import PROBLEMS
 from gym_pcgrl.envs.reps import REPRESENTATIONS
-from gym_pcgrl.envs.helper import get_int_prob, get_string_map
-import numpy as np
-import gym
-from gym import spaces
-import PIL
 
 """
 The PCGRL GYM Environment
 """
+
+
 class PcgrlEnv(gym.Env):
     """
     The type of supported rendering
@@ -24,6 +26,7 @@ class PcgrlEnv(gym.Env):
         rep (string): the current representation. This name has to be defined in REPRESENTATIONS
         constant in gym_pcgrl.envs.reps.__init__.py
     """
+
     def __init__(self, prob="binary", rep="narrow"):
         self._prob = PROBLEMS[prob]()
         self._rep = REPRESENTATIONS[rep]()
@@ -38,8 +41,10 @@ class PcgrlEnv(gym.Env):
         self.viewer = None
 
         self.action_space = self._rep.get_action_space(self._prob._width, self._prob._height, self.get_num_tiles())
-        self.observation_space = self._rep.get_observation_space(self._prob._width, self._prob._height, self.get_num_tiles())
-        self.observation_space.spaces['heatmap'] = spaces.Box(low=0, high=self._max_changes, dtype=np.uint8, shape=(self._prob._height, self._prob._width))
+        self.observation_space = self._rep.get_observation_space(self._prob._width, self._prob._height,
+                                                                 self.get_num_tiles())
+        self.observation_space.spaces['heatmap'] = spaces.Box(low=0, high=self._max_changes, dtype=np.uint8,
+                                                              shape=(self._prob._height, self._prob._width))
 
     """
     Seeding the used random variable to get the same result. If the seed is None,
@@ -51,6 +56,7 @@ class PcgrlEnv(gym.Env):
     Returns:
         int[]: An array of 1 element (the used seed)
     """
+
     def seed(self, seed=None):
         seed = self._rep.seed(seed)
         self._prob.seed(seed)
@@ -63,10 +69,12 @@ class PcgrlEnv(gym.Env):
         Observation: the current starting observation have structure defined by
         the Observation Space
     """
+
     def reset(self):
         self._changes = 0
         self._iteration = 0
-        self._rep.reset(self._prob._width, self._prob._height, get_int_prob(self._prob._prob, self._prob.get_tile_types()))
+        self._rep.reset(self._prob._width, self._prob._height,
+                        get_int_prob(self._prob._prob, self._prob.get_tile_types()))
         self._rep_stats = self._prob.get_stats(get_string_map(self._rep._map, self._prob.get_tile_types()))
         self._prob.reset(self._rep_stats)
         self._heatmap = np.zeros((self._prob._height, self._prob._width))
@@ -81,6 +89,7 @@ class PcgrlEnv(gym.Env):
     Returns:
         int: the tile number that can be used for padding
     """
+
     def get_border_tile(self):
         return self._prob.get_tile_types().index(self._prob._border_tile)
 
@@ -90,6 +99,7 @@ class PcgrlEnv(gym.Env):
     Returns:
         int: the number of different tiles
     """
+
     def get_num_tiles(self):
         return len(self._prob.get_tile_types())
 
@@ -103,6 +113,7 @@ class PcgrlEnv(gym.Env):
         **kwargs (dict(string,any)): the defined parameters depend on the used
         representation and the used problem
     """
+
     def adjust_param(self, **kwargs):
         if 'change_percentage' in kwargs:
             percentage = min(1, max(0, kwargs.get('change_percentage')))
@@ -111,8 +122,10 @@ class PcgrlEnv(gym.Env):
         self._prob.adjust_param(**kwargs)
         self._rep.adjust_param(**kwargs)
         self.action_space = self._rep.get_action_space(self._prob._width, self._prob._height, self.get_num_tiles())
-        self.observation_space = self._rep.get_observation_space(self._prob._width, self._prob._height, self.get_num_tiles())
-        self.observation_space.spaces['heatmap'] = spaces.Box(low=0, high=self._max_changes, dtype=np.uint8, shape=(self._prob._height, self._prob._width))
+        self.observation_space = self._rep.get_observation_space(self._prob._width, self._prob._height,
+                                                                 self.get_num_tiles())
+        self.observation_space.spaces['heatmap'] = spaces.Box(low=0, high=self._max_changes, dtype=np.uint8,
+                                                              shape=(self._prob._height, self._prob._width))
 
     """
     Advance the environment using a specific action
@@ -126,9 +139,10 @@ class PcgrlEnv(gym.Env):
         boolean: if the problem eneded (episode is over)
         dictionary: debug information that might be useful to understand what's happening
     """
+
     def step(self, action):
         self._iteration += 1
-        #save copy of the old stats to calculate the reward
+        # save copy of the old stats to calculate the reward
         old_stats = self._rep_stats
         # update the current state to the new state based on the taken action
         change, x, y = self._rep.update(action)
@@ -140,13 +154,13 @@ class PcgrlEnv(gym.Env):
         observation = self._rep.get_observation()
         observation["heatmap"] = self._heatmap.copy()
         reward = self._prob.get_reward(self._rep_stats, old_stats)
-        done = self._prob.get_episode_over(self._rep_stats,old_stats) or self._changes >= self._max_changes or self._iteration >= self._max_iterations
-        info = self._prob.get_debug_info(self._rep_stats,old_stats)
+        done = self._prob.get_episode_over(self._rep_stats, old_stats) #or self._iteration >= self._max_iterations#or self._changes >= self._max_changes or self._iteration >= self._max_iterations
+        info = self._prob.get_debug_info(self._rep_stats, old_stats)
         info["iterations"] = self._iteration
         info["changes"] = self._changes
         info["max_iterations"] = self._max_iterations
         info["max_changes"] = self._max_changes
-        #return the values
+        # return the values
         return observation, reward, done, info
 
     """
@@ -158,8 +172,9 @@ class PcgrlEnv(gym.Env):
     Returns:
         img or boolean: img for rgb_array rendering and boolean for human rendering
     """
+
     def render(self, mode='human'):
-        tile_size=16
+        tile_size = 16
         img = self._prob.render(get_string_map(self._rep._map, self._prob.get_tile_types()))
         img = self._rep.render(img, self._prob._tile_size, self._prob._border_size).convert("RGB")
         if mode == 'rgb_array':
@@ -176,6 +191,7 @@ class PcgrlEnv(gym.Env):
     """
     Close the environment
     """
+
     def close(self):
         if self.viewer:
             self.viewer.close()
