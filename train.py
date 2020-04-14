@@ -48,26 +48,24 @@ def callback(_locals, _globals):
     return True
 
 
-def main(game, representation, experiment, steps, n_cpu, render, logging, **kwargs):
+def train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs):
     env_name = '{}-{}-v0'.format(game, representation)
     exp_name = get_exp_name(game, representation, experiment, **kwargs)
     resume = kwargs.get('resume', False)
     if representation == 'wide':
         policy = FullyConvPolicyBigMap
-        if game == "sokoban" or game == 'rts':
+        if "small" in game:
             policy = FullyConvPolicySmallMap
     else:
         policy = CustomPolicyBigMap
-        if game == "sokoban" or game == 'rts':
+        if "small" in game:
             policy = CustomPolicySmallMap
-    if game == "binary":
-        kwargs['cropped_size'] = 28
-    elif game == "zelda":
-        kwargs['cropped_size'] = 22
-    elif game == "sokoban":
+    if "small" in game:
         kwargs['cropped_size'] = 10
-    elif game == "rts":
-        kwargs['cropped_size'] = 10
+    elif "medium" in game:
+        kwargs['cropped_size'] = 18
+    elif "large" in game:
+        kwargs['cropped_size'] = 34
     n = max_exp_idx(exp_name)
     global log_dir
     if not resume:
@@ -95,11 +93,21 @@ def main(game, representation, experiment, steps, n_cpu, render, logging, **kwar
     else:
         model.learn(total_timesteps=int(steps), tb_log_name=exp_name, callback=callback)
 
+def train_all():
+    for game in games:
+        for representation in representations:
+            train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)
+
 ################################## MAIN ########################################
-game = 'rts'
-representation = 'wide'
+sizes = ["small", "medium", "large"]
+styles = ["fair", "fun"]
+representations = ["narrow", "turtle", "wide"]
+games = []
+for size in sizes:
+    for style in styles:
+        games.append("%s_%s_rts" % (size, style))
 experiment = None
-steps = 1e6
+steps = 1e8
 render = False
 logging = True
 n_cpu = 50
@@ -108,4 +116,7 @@ kwargs = {
 }
 
 if __name__ == '__main__':
-    main(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)
+    train_all()
+    # game = 'large_fair_rts'
+    # representation = 'turtle'
+    # train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)

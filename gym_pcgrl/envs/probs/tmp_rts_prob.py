@@ -24,14 +24,13 @@ class RTSProblem(Problem):
         super().__init__()
         self._width = 8
         self._height = 8
-        self._prob = {"solid": 0, "empty": 0.9, "base": 0.01, "resource": 0.02, "chock_point": 0.07}
+        self._prob = {"solid": 0, "empty": 0.7, "base": 0.02, "resource": 0.1, "chock_point": 0.18}
         self._border_tile = "solid"
 
         self._target_base = 2
-        self._min_resource = self._width / 8
-        self._max_resource = self._width / 2
-        self._max_chock_points = self._width
-        self._resource_distance_diff = self._width / 8
+        self._min_resource = 1
+        self._max_resource = 4
+        self._max_chock_points = self._width * 2
 
         self._rewards = {
             "base_count": 6,
@@ -39,10 +38,10 @@ class RTSProblem(Problem):
             # "base_space": 2,
             # "asymmetry": 1,
             "resource_count": 4,
-            "resource_distance": 2,
+            "resource_distance": 1,
             # "resource_clustering": 1,
             # "path_overlapping": 2,
-            "chock_point": 1,
+            "chock_point": 3,
             "region": 6
         }
 
@@ -71,10 +70,9 @@ class RTSProblem(Problem):
     def adjust_param(self, **kwargs):
         super().adjust_param(**kwargs)
 
-        self._min_resource = kwargs.get('min_resource', self._max_resource)
+
         self._max_resource = kwargs.get('max_resource', self._max_resource)
         self._max_chock_points = kwargs.get('max_chock_points', self._max_chock_points)
-        self._resource_distance_diff = kwargs.get("resource_distance_diff", self._resource_distance_diff);
 
         rewards = kwargs.get('rewards')
         if rewards is not None:
@@ -115,14 +113,14 @@ class RTSProblem(Problem):
                 dikjstra2, _ = run_dikjstra(b2_x, b2_y, map, ["empty", "base", "resource"])
                 resources = []
                 resources.extend(map_locations["resource"])
-                dist1 = 100000
-                dist2 = 100000
+                dist1 = 10000
+                dist2 = 10000
                 for r_x, r_y in resources:
                     if dikjstra1[r_y][r_x] > 0:
                         dist1 = min(dist1, dikjstra1[r_y][r_x])
                     if dikjstra2[r_y][r_x] > 0:
                         dist2 = min(dist2, dikjstra2[r_y][r_x])
-                map_stats["resource_distance"] = self._resource_distance_diff - abs(dist1 - dist2)
+                map_stats["resource_distance"] = 1 - abs(dist1 - dist2)
         return map_stats
 
     """
@@ -176,11 +174,10 @@ class RTSProblem(Problem):
 
     def get_episode_over(self, new_stats, old_stats):
         return new_stats["base_count"] == self._target_base and \
-            new_stats["resource_count"] >= self._min_resource and \
-            new_stats["resource_count"] <= self._max_resource and \
-            new_stats["chock_point"] <= self._max_chock_points and \
-            new_stats["region"] == 1 and \
-            new_stats["resource_distance"] > 0
+               new_stats["resource_count"] >= self._min_resource and \
+               new_stats["resource_count"] <= self._max_resource and \
+               new_stats["base_distance"] > 2 and \
+               new_stats["resource_distance"] >= 0
     """
     Get any debug information need to be printed
 

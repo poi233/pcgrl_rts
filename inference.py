@@ -13,15 +13,17 @@ def infer(game, representation, model_path, **kwargs):
      - infer_kwargs: Args to pass to the environment.
     """
     env_name = '{}-{}-v0'.format(game, representation)
-    if game == "binary":
-        model.FullyConvPolicy = model.FullyConvPolicyBigMap
-        kwargs['cropped_size'] = 28
-    elif game == "zelda":
-        model.FullyConvPolicy = model.FullyConvPolicyBigMap
-        kwargs['cropped_size'] = 22
-    elif game == "sokoban" or game == 'rts':
+    if "small" in game:
         model.FullyConvPolicy = model.FullyConvPolicySmallMap
         kwargs['cropped_size'] = 10
+    elif "medium" in game:
+        model.FullyConvPolicy = model.FullyConvPolicyBigMap
+        kwargs['cropped_size'] = 18
+    elif "large" in game:
+        model.FullyConvPolicy = model.FullyConvPolicyBigMap
+        kwargs['cropped_size'] = 34
+
+
     kwargs['render'] = True
 
     agent = PPO2.load(model_path)
@@ -42,13 +44,16 @@ def infer(game, representation, model_path, **kwargs):
 
 ################################## MAIN ########################################
 game = 'rts'
-representation = 'turtle'
-model_path = 'models/{}/{}/model_1.pkl'.format(game, representation)
+size = 'medium'
+style = 'fair'
+representation = 'narrow'
+model_path = 'models/{}_{}_{}/{}/model_1.pkl'.format(size, style, game, representation)
 kwargs = {
     'change_percentage': 0.4,
     'trials': 1,
     'verbose': True
 }
+
 
 if __name__ == '__main__':
     obs = infer(game, representation, model_path, **kwargs)
