@@ -61,11 +61,11 @@ def train(game, representation, experiment, steps, n_cpu, render, logging, **kwa
         if "small" in game:
             policy = CustomPolicySmallMap
     if "small" in game:
-        kwargs['cropped_size'] = 10
+        kwargs['cropped_size'] = 8
     elif "medium" in game:
-        kwargs['cropped_size'] = 18
+        kwargs['cropped_size'] = 12
     elif "large" in game:
-        kwargs['cropped_size'] = 34
+        kwargs['cropped_size'] = 16
     n = max_exp_idx(exp_name)
     global log_dir
     if not resume:
@@ -107,7 +107,7 @@ for size in sizes:
     for style in styles:
         games.append("%s_%s_rts" % (size, style))
 experiment = None
-steps = 1e8
+steps = 1e7
 render = False
 logging = True
 n_cpu = 50
@@ -116,7 +116,7 @@ kwargs = {
 }
 
 if __name__ == '__main__':
-    train_all()
-    # game = 'large_fair_rts'
-    # representation = 'turtle'
-    # train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)
+    # train_all()
+    game = 'small_fair_rts'
+    representation = 'narrow'
+    train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)

@@ -3,6 +3,7 @@ Run a trained agent and get generated maps
 """
 import model
 from stable_baselines import PPO2
+import numpy as np
 
 import time
 from utils import make_vec_envs
@@ -15,17 +16,14 @@ def infer(game, representation, model_path, **kwargs):
     env_name = '{}-{}-v0'.format(game, representation)
     if "small" in game:
         model.FullyConvPolicy = model.FullyConvPolicySmallMap
-        kwargs['cropped_size'] = 10
+        kwargs['cropped_size'] = 8
     elif "medium" in game:
         model.FullyConvPolicy = model.FullyConvPolicyBigMap
-        kwargs['cropped_size'] = 18
+        kwargs['cropped_size'] = 12
     elif "large" in game:
         model.FullyConvPolicy = model.FullyConvPolicyBigMap
-        kwargs['cropped_size'] = 34
-
-
-    kwargs['render'] = True
-
+        kwargs['cropped_size'] = 16
+    kwargs['render'] = False
     agent = PPO2.load(model_path)
     env = make_vec_envs(env_name, representation, None, 1, **kwargs)
     obs = env.reset()
@@ -34,27 +32,28 @@ def infer(game, representation, model_path, **kwargs):
         while not dones:
             action, _ = agent.predict(obs)
             obs, _, dones, info = env.step(action)
-            print()
+            env.render(mode='human')
             if kwargs.get('verbose', False):
                 print(info[0])
             if dones:
                 break
         time.sleep(0.2)
-    return obs
+    return env, obs
 
 ################################## MAIN ########################################
-game = 'rts'
-size = 'medium'
-style = 'fair'
+game = 'small_fair_rts'
 representation = 'narrow'
-model_path = 'models/{}_{}_{}/{}/model_1.pkl'.format(size, style, game, representation)
+model_path = 'models/{}/{}/model_1.pkl'.format(game, representation)
 kwargs = {
     'change_percentage': 0.4,
     'trials': 1,
-    'verbose': True
+    'verbose': False
 }
 
 
 if __name__ == '__main__':
-    obs = infer(game, representation, model_path, **kwargs)
-    print(obs)
+    env, obs = infer(game, representation, model_path, **kwargs)
+    print("-------------------------")
+    res = [[np.argmax(item) for item in row] for row in obs[0]]
+    for row in res:
+        print(row)

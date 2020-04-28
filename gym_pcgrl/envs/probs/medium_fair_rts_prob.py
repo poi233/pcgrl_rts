@@ -9,7 +9,7 @@ class MediumFairRTSProblem(RTSProblem):
 
         self._min_resource = self._width / 8
         self._max_resource = self._width / 2
-        self._max_chock_points = self._width
+        self._max_obstacles = self._width
         self._resource_distance_diff = self._width / 8
 
         self._rewards = {
@@ -21,6 +21,6 @@ class MediumFairRTSProblem(RTSProblem):
             "resource_distance": 1,
             # "resource_clustering": 1,
             # "path_overlapping": 2,
-            "chock_point": 3,
+            "obstacle": 3,
             "region": 6
         }
