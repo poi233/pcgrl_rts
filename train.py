@@ -54,11 +54,11 @@ def train(game, representation, experiment, steps, n_cpu, render, logging, **kwa
     resume = kwargs.get('resume', False)
     if representation == 'wide':
         policy = FullyConvPolicyBigMap
-        if "small" in game:
+        if "small" or "medium" in game:
             policy = FullyConvPolicySmallMap
     else:
         policy = CustomPolicyBigMap
-        if "small" in game:
+        if "small" or "medium" in game:
             policy = CustomPolicySmallMap
     if "small" in game:
         kwargs['cropped_size'] = 8
@@ -117,6 +117,6 @@ kwargs = {
 
 if __name__ == '__main__':
     # train_all()
-    game = 'small_fair_rts'
+    game = 'medium_fair_rts'
     representation = 'narrow'
     train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)
