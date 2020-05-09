@@ -1,10 +1,9 @@
 import os
 
-import numpy as np
 from PIL import Image
 
 from gym_pcgrl.envs.helper import get_range_reward, get_tile_locations, \
-    calc_num_regions, calc_certain_tile, calc_longest_path, run_dikjstra
+    calc_num_regions, calc_certain_tile, run_dikjstra
 from gym_pcgrl.envs.probs.problem import Problem
 
 """
@@ -24,31 +23,27 @@ class RTSProblem(Problem):
         super().__init__()
         self._width = 8
         self._height = 8
-        self._prob = {"empty": 0.9, "base": 0.01, "resource": 0.02, "obstacle": 0.07}
+        self._prob = {"empty": 0.785, "base": 0.03, "resource": 0.06, "obstacle": 0.125}
         self._border_size = 0
         self._target_base = 2
         self._min_resource = self._width / 8
-        self._max_resource = self._width / 2
-        self._max_obstacles = self._width
-        self._resource_distance_diff = self._width / 8
-        self._resource_balance_diff = self._width / 8 * 3
-        self._area_control_diff = self._width / 8 * 3
-        self._base_distance_diff = self._width / 2
+        self._max_resource = self._width
+        self._max_obstacles = self._width / 2 * 3
+        self._resource_distance_diff = 1
+        self._resource_balance_diff = self._width / 4
+        self._area_control_diff = self._width / 4 * 2
+        self._base_distance_diff = self._width * 3 / 8
         self._map = None
 
         self._rewards = {
-            "base_count": 6,
+            "base_count": 10,
             "base_distance": 2,
             "area_control": 4,
-            # "base_space": 2,
-            # "asymmetry": 1,
-            "resource_count": 4,
-            "resource_distance": 2,
-            "resource_balance": 2,
-            # "resource_clustering": 1,
-            # "path_overlapping": 2,
+            "resource_count": 2,
+            "resource_distance": 5,
+            "resource_balance": 4,
             "obstacle": 1,
-            "region": 6
+            "region": 10
         }
 
     """
@@ -101,14 +96,10 @@ class RTSProblem(Problem):
             "base_count": calc_certain_tile(map_locations, ["base"]),
             "resource_count": calc_certain_tile(map_locations, ["resource"]),
             "obstacle": calc_certain_tile(map_locations, ["obstacle"]),
-            "base_distance": 0,
-            # "base_space": 0,
-            # "asymmetry": 0,
-            "resource_distance": 0,
-            "resource_balance": 0,
-            "area_control": 0,
-            # "resource_clustering": 0,
-            # "path_overlapping": 0,
+            "base_distance": -500,
+            "resource_distance": -500,
+            "resource_balance": -500,
+            "area_control": -500,
             "region": calc_num_regions(map, map_locations, ["empty", "base", "resource"])
         }
         if map_stats["base_count"] == 2:
@@ -118,9 +109,11 @@ class RTSProblem(Problem):
             dikjstra1, _ = run_dikjstra(b1_x, b1_y, map, ["empty", "base", "resource"])
             dikjstra2, _ = run_dikjstra(b2_x, b2_y, map, ["empty", "base", "resource"])
             # calculate distance
-            map_stats["base_distance"] = self._base_distance_diff - abs(self._base_distance_diff - max(map_stats["base_distance"], dikjstra1[b2_y][b2_x]))
+            map_stats["base_distance"] = self._base_distance_diff - abs(
+                self._width / 2 - max(map_stats["base_distance"], dikjstra1[b2_y][b2_x]))
             # calculate resource distance
-            if map_stats["resource_count"] >= self._min_resource and map_stats["resource_count"] <= self._max_resource:
+            if map_stats[
+                "resource_count"] >= self._min_resource:  # and map_stats["resource_count"] <= self._max_resource:
                 resources = []
                 resources.extend(map_locations["resource"])
                 sum1 = 0
@@ -146,7 +139,6 @@ class RTSProblem(Problem):
                     elif dikjstra1[y][x] < dikjstra2[y][x]:
                         base1 += 1
             map_stats["area_control"] = self._area_control_diff - abs(base1 - base2)
-
         return map_stats
 
     """
@@ -163,33 +155,30 @@ class RTSProblem(Problem):
     def get_reward(self, new_stats, old_stats):
         # longer path is rewarded and less number of regions is rewarded
         rewards = {
-            "base_count": get_range_reward(new_stats["base_count"], old_stats["base_count"], self._target_base, self._target_base),
-            "base_distance": get_range_reward(new_stats["base_distance"], old_stats["base_distance"], self._width / 2, self._width * 2),
-
-            # "base_space": get_range_reward(new_stats["base_space"], old_stats["base_space"], 0, 10),
-            # "asymmetry": get_range_reward(new_stats["asymmetry"], old_stats["asymmetry"], 0, 5),
-            "resource_count": get_range_reward(new_stats["resource_count"], old_stats["resource_count"], self._min_resource, self._max_resource),
-            "resource_distance": get_range_reward(new_stats["resource_distance"], old_stats["resource_distance"], 0, self._resource_distance_diff),
-            "resource_balance": get_range_reward(new_stats["resource_balance"], old_stats["resource_balance"], 0, self._resource_balance_diff),
-            # "resource_clustering": get_range_reward(new_stats["resource_clustering"], old_stats["resource_clustering"], 0, 5),
-            # "path_overlapping": get_range_reward(new_stats["path_overlapping"], old_stats["path_overlapping"], 0, 10),
+            "base_count": get_range_reward(new_stats["base_count"], old_stats["base_count"], self._target_base,
+                                           self._target_base),
+            "base_distance": get_range_reward(new_stats["base_distance"], old_stats["base_distance"], 0,
+                                              self._base_distance_diff),
+            "resource_count": get_range_reward(new_stats["resource_count"], old_stats["resource_count"],
+                                               self._min_resource, self._max_resource),
+            "resource_distance": get_range_reward(new_stats["resource_distance"], old_stats["resource_distance"], 0,
+                                                  self._resource_distance_diff),
+            "resource_balance": get_range_reward(new_stats["resource_balance"], old_stats["resource_balance"], 0,
+                                                 self._resource_balance_diff),
             "obstacle": get_range_reward(new_stats["obstacle"], old_stats["obstacle"], 0, self._max_obstacles),
             "region": get_range_reward(new_stats["region"], old_stats["region"], 1, 1),
-            "area_control": get_range_reward(new_stats["area_control"], old_stats["area_control"], 0, self._area_control_diff),
+            "area_control": get_range_reward(new_stats["area_control"], old_stats["area_control"], 0,
+                                             self._area_control_diff),
         }
         # calculate the total reward
         return rewards["base_count"] * self._rewards["base_count"] + \
-            rewards["base_distance"] * self._rewards["base_distance"] + \
-            rewards["resource_count"] * self._rewards["resource_count"] + \
-            rewards["region"] * self._rewards["region"] + \
-            rewards["resource_distance"] * self._rewards["resource_distance"] + \
-            rewards["resource_balance"] * self._rewards["resource_balance"] + \
-            rewards["obstacle"] * self._rewards["obstacle"] + \
-            rewards["area_control"] * self._rewards["area_control"]
-        # rewards["asymmetry"] * self._rewards["asymmetry"] + \
-        # rewards["base_space"] * self._rewards["base_space"] + \
-        # rewards["resource_clustering"] * self._rewards["resource_clustering"] + \
-        # rewards["path_overlapping"] * self._rewards["path_overlapping"] + \
+               rewards["base_distance"] * self._rewards["base_distance"] + \
+               rewards["resource_count"] * self._rewards["resource_count"] + \
+               rewards["region"] * self._rewards["region"] + \
+               rewards["resource_distance"] * self._rewards["resource_distance"] + \
+               rewards["resource_balance"] * self._rewards["resource_balance"] + \
+               rewards["obstacle"] * self._rewards["obstacle"] + \
+               rewards["area_control"] * self._rewards["area_control"]
 
     """
     Uses the stats to check if the problem ended (episode_over) which means reached
@@ -204,12 +193,14 @@ class RTSProblem(Problem):
     """
 
     def get_episode_over(self, new_stats, old_stats):
-        return new_stats["base_count"] == self._target_base and \
-               new_stats["resource_count"] >= self._min_resource and \
-               new_stats["resource_count"] <= self._max_resource and \
-               new_stats["obstacle"] <= self._max_obstacles and \
-               new_stats["region"] == 1 and \
-               new_stats["resource_distance"] > 0
+        basic_rules = new_stats["base_count"] == self._target_base and \
+                      new_stats["resource_count"] >= self._min_resource and \
+                      new_stats["region"] == 1
+        eval_total = new_stats["base_distance"] + new_stats["resource_distance"] + new_stats["resource_balance"] + \
+                     new_stats["area_control"]
+        optional_rules = eval_total > -10
+        return basic_rules and optional_rules
+
     """
     Get any debug information need to be printed
 
@@ -226,25 +217,13 @@ class RTSProblem(Problem):
         return {
             "base_count": new_stats["base_count"],
             "base_distance": new_stats["base_distance"],
-            # "base_space": new_stats["base_space"],
-            # "asymmetry": new_stats["asymmetry"],
             "resource_count": new_stats["resource_count"],
             "resource_distance": new_stats["resource_distance"],
             "resource_balance": new_stats["resource_balance"],
-            # "resource_clustering": new_stats["resource_clustering"],
-            # "path_overlapping": new_stats["path_overlapping"],
             "obstacle": new_stats["obstacle"],
             "region": new_stats["region"],
-            "area_control": new_stats["area_control"]
-
-            #
-            # "player": new_stats["player"],
-            # "key": new_stats["key"],
-            # "door": new_stats["door"],
-            # "enemies": new_stats["enemies"],
-            # "regions": new_stats["regions"],
-            # "nearest-enemy": new_stats["nearest-enemy"],
-            # "path-length": new_stats["path-length"]
+            "area_control": new_stats["area_control"],
+            "old_stats": old_stats
         }
 
     """
@@ -256,6 +235,7 @@ class RTSProblem(Problem):
     Returns:
         Image: a pillow image on how the map will look like using the binary graphics
     """
+
     def render(self, map):
         if self._graphics == None:
             self._graphics = {

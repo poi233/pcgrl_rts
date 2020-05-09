@@ -11,7 +11,6 @@ class MediumFairRTSProblem(RTSProblem):
         self._max_resource = self._width / 2
         self._max_obstacles = self._width
         self._resource_distance_diff = self._width / 8
-
         # self._rewards = {
         #     "base_count": 6,
         #     "base_distance": 2,
@@ -24,3 +23,4 @@ class MediumFairRTSProblem(RTSProblem):
         #     "obstacle": 3,
         #     "region": 6
         # }
+

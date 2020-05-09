@@ -64,8 +64,6 @@ def train(game, representation, experiment, steps, n_cpu, render, logging, **kwa
         kwargs['cropped_size'] = 8
     elif "medium" in game:
         kwargs['cropped_size'] = 12
-    elif "large" in game:
-        kwargs['cropped_size'] = 16
     n = max_exp_idx(exp_name)
     global log_dir
     if not resume:
@@ -116,7 +114,12 @@ kwargs = {
 }
 
 if __name__ == '__main__':
-    # train_all()
-    game = 'medium_fair_rts'
+    game = 'area_control_small_rts'
     representation = 'narrow'
     train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)
+
+    # train_all()
+    # games = ['area_control_small_rts', 'base_small_rts', 'resource_small_rts', 'small_fair_rts']
+    # representation = 'narrow'
+    # for game in games:
+    #     train(game, representation, experiment, steps, n_cpu, render, logging, **kwargs)
